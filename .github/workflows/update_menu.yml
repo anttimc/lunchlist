@@ -27,6 +27,6 @@ jobs:
         python scraper.py
         git config --global user.name 'anttimc'
         git config --global user.email 'anttimc@users.noreply.github.com'
-        git add menu.html
+        git add index.html
         git commit -m "Daily lunch" || echo "No changes to commit"
         git push
