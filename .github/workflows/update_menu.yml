@@ -1,0 +1,33 @@
+name: Python application
+
+on:
+  schedule:
+  - cron: "0 0 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Run menu update
+      run: |
+        python scraper.py
+        git config --global user.name 'anttimc'
+        git config --global user.email 'anttimc@users.noreply.github.com'
+        git add menu.html
+        git commit -am "Daily lunch"
+        git push
