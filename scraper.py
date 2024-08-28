@@ -41,7 +41,7 @@ def create_menu_page(menus, weekday_name=0):
 
 
 if __name__ == '__main__':
-    weekday = max(datetime.datetime.today().weekday(), 4)
+    weekday = min(datetime.datetime.today().weekday(), 4)
     weekday_name = datetime.datetime.today().strftime("%A")
 
     menu_page = create_menu_page(
