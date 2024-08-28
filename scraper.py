@@ -17,12 +17,12 @@ def get_menu(url, day_of_week=0):
     page = requests.get(url)
     tree = html.fromstring(page.content)
     menu = tree.xpath("//*[@id='menu']")
-    return menu[0][day_of_week][1]
+    return menu[0][day_of_week]
 
-def get_menus(names, day_of_week_name):
+def get_menus(names, day_of_week):
     menus = {}
     for name in names:
-        menus[name] = get_menu(get_url(name))
+        menus[name] = get_menu(get_url(name), day_of_week=day_of_week)
     return menus
 
 def create_menu_page(menus, weekday_name=0):
