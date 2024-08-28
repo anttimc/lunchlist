@@ -19,16 +19,16 @@ def get_menu(url, day_of_week=0):
     menu = tree.xpath("//*[@id='menu']")
     return menu[0][day_of_week][1]
 
-def get_menus(names, day_of_week=0):
+def get_menus(names, day_of_week_name):
     menus = {}
     for name in names:
         menus[name] = get_menu(get_url(name))
     return menus
 
-def create_menu_page(menus):
+def create_menu_page(menus, weekday_name=0):
     menu_page = E.HTML(
         E.HEAD(
-            E.TITLE('Menu')
+            E.TITLE(f'Lunch: {weekday_name}')
         ),
         *[
             E.BODY(
@@ -39,11 +39,18 @@ def create_menu_page(menus):
     )
     return menu_page
 
-menu_page = create_menu_page(get_menus(
-    ['ravintola-akseli', 'bax', 'dylan-luft'],
-    datetime.datetime.today().weekday()
-    ))
 
-with open('menu.html', 'w') as f:
-    f.write(html.tostring(menu_page).decode("utf-8"))
-#menu_page.write('menu.html')
+if __name__ == '__main__':
+    weekday = datetime.datetime.today().weekday()
+    weekday_name = datetime.datetime.today().strftime("%A")
+
+    menu_page = create_menu_page(
+        get_menus(
+            ['ravintola-akseli', 'bax', 'dylan-luft'],
+            weekday
+            ), 
+        weekday_name
+        )
+
+    with open('index.html', 'w') as f:
+        f.write(html.tostring(menu_page).decode("utf-8"))
