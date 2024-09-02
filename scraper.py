@@ -13,6 +13,15 @@ display_names = {
     'dylan-luft': 'Dylan Luft'
 }
 
+
+dietary_mappings = {
+ """<a href="#vl" title="Vähälaktoosinen" class="diet diet-vl">vl   </a>""":  """<span style="color:cyan"> VL </span>""",
+ """<a href="#l" title="Laktoositon" class="diet diet-l">l  </a>""": """<span style="color:blue"> L </span>""",
+ """<a href="#g" title="Gluteeniton" class="diet diet-g">g </a>""": """<span style="color:orange"> G </span>""",
+ """<a href="#m" title="Maidoton" class="diet diet-m">m</a>""": """<span style="color:blue"> M </span>""",
+ """ veg """: """<span style="color:green"> Veg </span>""",
+}
+
 def get_menu(url, day_of_week=0):
     page = requests.get(url)
     tree = html.fromstring(page.content)
@@ -52,5 +61,11 @@ if __name__ == '__main__':
         weekday_name
         )
 
+
+    menu_str = html.tostring(menu_page, pretty_print=True, encoding='utf-8').decode('utf-8')
+
+    for key, value in dietary_mappings.items():
+        menu_str = menu_str.replace(key, value)
+    
     with open('index.html', 'w') as f:
-        f.write(html.tostring(menu_page).decode("utf-8"))
+       f.write(menu_str)
