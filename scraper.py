@@ -20,6 +20,9 @@ dietary_mappings = {
  """<a href="#g" title="Gluteeniton" class="diet diet-g">g </a>""": """<span style="color:orange"> G </span>""",
  """<a href="#m" title="Maidoton" class="diet diet-m">m</a>""": """<span style="color:blue"> M </span>""",
  """ veg """: """<span style="color:green"> Veg </span>""",
+ """<span class="allergen">l</span>""": """<span style="color:blue">L </span>""",
+ """<span class="allergen">g</span>""": """<span style="color:orange"> G </span>""",
+ """<span class="allergen">ve</span>""": """<span style="color:green"> Veg </span>""",
 }
 
 def get_menu(url, day_of_week=0):
@@ -28,10 +31,21 @@ def get_menu(url, day_of_week=0):
     menu = tree.xpath("//*[@id='menu']")
     return menu[0][day_of_week]
 
-def get_menus(names, day_of_week):
+def get_bax_menu(week_number, day_of_week=0):
+    url = 'https://kanresta.fi/ravintolat/ravintola-bax/'
+    page = requests.get(url)
+    tree = html.fromstring(page.content)
+    menu = tree.xpath(f"//*[@id='week-{week_number}']")
+    return menu[0][0][0][day_of_week+1]
+
+
+def get_menus(names, day_of_week, week_number):
     menus = {}
     for name in names:
-        menus[name] = get_menu(get_url(name), day_of_week=day_of_week)
+        menus[name] = (
+            get_bax_menu(week_number, day_of_week) if name == 'bax' else
+            get_menu(get_url(name), day_of_week=day_of_week)
+        )
     return menus
 
 def create_menu_page(menus, weekday_name=0):
@@ -39,6 +53,7 @@ def create_menu_page(menus, weekday_name=0):
         E.HEAD(
             E.TITLE(f'Lunch: {weekday_name}')
         ),
+        E.LINK(rel='stylesheet', href='bax.css', type='text/css', media='all'),
         *[
             E.BODY(
             E.H1(display_names[key]),
@@ -52,13 +67,15 @@ def create_menu_page(menus, weekday_name=0):
 if __name__ == '__main__':
     weekday = min(datetime.datetime.today().weekday(), 4)
     weekday_name = datetime.datetime.today().strftime("%A")
+    week_number = datetime.datetime.today().isocalendar().week
 
     menu_page = create_menu_page(
         get_menus(
             ['ravintola-akseli', 'bax', 'dylan-luft'],
-            weekday
+            day_of_week=weekday,
+            week_number=week_number
             ), 
-        weekday_name
+        weekday_name,
         )
 
 

@@ -1,0 +1,21 @@
+.weekday-panel .portions {
+	display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.5rem;
+    -webkit-box-align: baseline;
+    align-items: baseline;
+    overflow: hidden;
+    width: 100%;
+    z-index: 1;
+	padding-bottom: 7px;
+ }
+ .weekday-panel .portions .price-block {
+	display: flex;
+	-webkit-box-align: baseline;
+	align-items: baseline;
+	flex: 1 1 0%;
+	gap: 0.5rem;
+}
+.weekday-panel .portions .price-block .price-dotted {
+	border-bottom: 1px dotted rgb(40, 40, 40);
+}
