@@ -36,7 +36,12 @@ def get_bax_menu(week_number, day_of_week=0):
     page = requests.get(url)
     tree = html.fromstring(page.content)
     menu = tree.xpath(f"//*[@id='week-{week_number}']")
-    return menu[0][0][0][day_of_week+1]
+    element = menu[0][0][0][day_of_week+1]
+    element.tag = 'ul'
+    element[0].tag = 'b'
+    for el in element[1:]:
+        el.tag = 'li'
+    return element
 
 
 def get_menus(names, day_of_week, week_number):
@@ -51,15 +56,15 @@ def get_menus(names, day_of_week, week_number):
 def create_menu_page(menus, weekday_name=0):
     menu_page = E.HTML(
         E.HEAD(
-            E.TITLE(f'Lunch: {weekday_name}')
+            E.TITLE(f'Lunch: {weekday_name}'),
+            E.LINK(rel='stylesheet', href='bax.css', type='text/css', media='all'),
         ),
-        E.LINK(rel='stylesheet', href='bax.css', type='text/css', media='all'),
-        *[
-            E.BODY(
+        E.BODY(*[
+            E.DIV(
             E.H1(display_names[key]),
             value
             ) for key, value in menus.items()
-        ]
+        ])
     )
     return menu_page
 
