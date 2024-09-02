@@ -15,7 +15,7 @@ display_names = {
 
 
 dietary_mappings = {
- """<a href="#vl" title="Vähälaktoosinen" class="diet diet-vl">vl   </a>""":  """<span style="color:cyan"> VL </span>""",
+ """<a href="#vl" title="Vähälaktoosinen" class="diet diet-vl">vl   </a>""":  """<span style="color:blue"> VL </span>""",
  """<a href="#l" title="Laktoositon" class="diet diet-l">l  </a>""": """<span style="color:blue"> L </span>""",
  """<a href="#g" title="Gluteeniton" class="diet diet-g">g </a>""": """<span style="color:orange"> G </span>""",
  """<a href="#m" title="Maidoton" class="diet diet-m">m</a>""": """<span style="color:blue"> M </span>""",
