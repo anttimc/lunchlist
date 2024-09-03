@@ -60,6 +60,7 @@ def create_menu_page(menus, weekday_name=0):
         E.HEAD(
             E.TITLE(f'Lunch: {weekday_name}'),
             E.LINK(rel='stylesheet', href='bax.css', type='text/css', media='all'),
+            E.META(name='viewport', content="width=device-width, initial-scale=1")
         ),
         E.BODY(*[
             E.DIV(
