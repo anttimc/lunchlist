@@ -23,8 +23,8 @@ dietary_mappings = {
  """<span class="allergen">l</span>""": """<span style="color:blue">L </span>""",
  """<span class="allergen">g</span>""": """<span style="color:orange"> G </span>""",
  """<span class="allergen">ve</span>""": """<span style="color:green"> Veg </span>""",
- """ ve""": """<span style="color:green"> Veg </span>""",
  """ veg""": """<span style="color:green"> Veg </span>""",
+ """ ve""": """<span style="color:green"> Veg </span>""",
 }
 
 def get_menu(url, day_of_week=0):
