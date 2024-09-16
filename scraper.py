@@ -37,8 +37,8 @@ def get_bax_menu(week_number, day_of_week=0):
     url = 'https://kanresta.fi/ravintolat/ravintola-bax/'
     page = requests.get(url)
     tree = html.fromstring(page.content)
-    menu = tree.xpath(f"//*[@id='week-{week_number}']")
-    element = menu[0][0][0][day_of_week+1]
+    menu = tree.xpath(f"//*[@id='week-{week_number}']//div[@class='weekday-block']")
+    element = menu[day_of_week]
     element.tag = 'ul'
     element[0].tag = 'b'
     for el in element[1:]:
