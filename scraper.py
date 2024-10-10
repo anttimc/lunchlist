@@ -28,7 +28,10 @@ dietary_mappings = {
 }
 
 def get_menu(url, day_of_week=0):
-    page = requests.get(url)
+    try:
+        page = requests.get(url)
+    except requests.exceptions.ConnectionError:
+        return E.DIV(E.P('lounaat.info unreachable'))
     tree = html.fromstring(page.content)
     menu = tree.xpath("//*[@id='menu']")
     return menu[0][day_of_week]
@@ -46,11 +49,23 @@ def get_bax_menu(week_number, day_of_week=0):
     return element
 
 
+def get_akseli_menu(day_of_week=0):
+    url = 'https://www.ninankeittio.fi/helsinki-ilmala-akseli/'
+    page = requests.get(url)
+    tree = html.fromstring(page.content)
+    # TODO: find better matching?
+    menu = tree.xpath("//*[@class='fusion-text fusion-text-14']")[0]
+    # The menu is a list of paragraphs and lists
+    # The fist paragrah is the week, next ones day + lunchlist
+    return E.DIV(*menu[1 + 2*day_of_week:1 + 2*(day_of_week+1)])
+
+
 def get_menus(names, day_of_week, week_number):
     menus = {}
     for name in names:
         menus[name] = (
             get_bax_menu(week_number, day_of_week) if name == 'bax' else
+            get_akseli_menu(day_of_week) if name == 'ravintola-akseli' else
             get_menu(get_url(name), day_of_week=day_of_week)
         )
     return menus
