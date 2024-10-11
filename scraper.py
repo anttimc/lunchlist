@@ -59,12 +59,32 @@ def get_akseli_menu(day_of_week=0):
     return E.DIV(*menu[1 + 2*day_of_week:1 + 2*(day_of_week+1)])
 
 
+def parse_dylan_json(json_dict, day_of_week, lang='fi'):
+    menu = json_dict['data']['week']['days'][day_of_week+1]['lunches']
+    day_name = json_dict['data']['week']['days'][day_of_week+1]['dayName'][lang]
+    return E.DIV(
+        E.P(E.B(day_name)),
+        E.UL(*[E.LI(
+        lunch['title'][lang] + ' ' + lunch['normalPrice']['price'] + ('€'  if lunch['normalPrice']['price'] != '' else ''),
+        ) for lunch in menu[1:]])
+    )
+
+
+def get_dylan_luft_menu(day_of_week=0):
+    url = 'https://europe-west1-luncher-7cf76.cloudfunctions.net/api/v1/week/5843f3ec-6a2c-49ba-ba3e-b384f6c996f1/active?language=fi'
+    json_dict = requests.get(url).json()
+    return E.DIV(
+        parse_dylan_json(json_dict, day_of_week, 'fi'),
+        parse_dylan_json(json_dict, day_of_week, 'en')
+    )
+
 def get_menus(names, day_of_week, week_number):
     menus = {}
     for name in names:
         menus[name] = (
             get_bax_menu(week_number, day_of_week) if name == 'bax' else
             get_akseli_menu(day_of_week) if name == 'ravintola-akseli' else
+            get_dylan_luft_menu(day_of_week) if name == 'dylan-luft' else
             get_menu(get_url(name), day_of_week=day_of_week)
         )
     return menus
@@ -103,8 +123,8 @@ if __name__ == '__main__':
 
     menu_str = html.tostring(menu_page, pretty_print=True, encoding='utf-8').decode('utf-8')
 
-    for key, value in dietary_mappings.items():
-        menu_str = menu_str.replace(key, value)
+    #for key, value in dietary_mappings.items():
+    #    menu_str = menu_str.replace(key, value)
     
     with open('index.html', 'w') as f:
        f.write(menu_str)
