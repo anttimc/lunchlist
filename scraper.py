@@ -53,8 +53,7 @@ def get_akseli_menu(day_of_week=0):
     url = 'https://www.ninankeittio.fi/helsinki-ilmala-akseli/'
     page = requests.get(url)
     tree = html.fromstring(page.content)
-    # TODO: find better matching?
-    menu = tree.xpath("//*[@class='fusion-text fusion-text-14']")[0]
+    menu = tree.xpath("//*[@id='lounaslista']/div/div/div[2]/div/div[2]")[0]
     # The menu is a list of paragraphs and lists
     # The fist paragrah is the week, next ones day + lunchlist
     return E.DIV(*menu[1 + 2*day_of_week:1 + 2*(day_of_week+1)])
