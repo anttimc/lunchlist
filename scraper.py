@@ -42,11 +42,12 @@ def get_bax_menu(week_number, day_of_week=0):
     tree = html.fromstring(page.content)
     menu = tree.xpath(f"//*[@id='week-{week_number}']//div[@class='weekday-block']")
     element = menu[day_of_week]
-    element.tag = 'ul'
-    element[0].tag = 'b'
     for el in element[1:]:
         el.tag = 'li'
-    return element
+    return E.DIV(
+        E.P(E.B(element[0].text)),
+        E.UL(*element[1:])
+    )
 
 
 def get_akseli_menu(day_of_week=0):
