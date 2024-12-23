@@ -41,7 +41,10 @@ def get_bax_menu(week_number, day_of_week=0):
     page = requests.get(url)
     tree = html.fromstring(page.content)
     menu = tree.xpath(f"//*[@id='week-{week_number}']//div[@class='weekday-block']")
-    element = menu[day_of_week]
+    try:
+        element = menu[day_of_week]
+    except Exception:
+        return E.DIV(E.P(E.B('Not available'))) 
     for el in element[1:]:
         el.tag = 'li'
     return E.DIV(
