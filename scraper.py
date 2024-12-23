@@ -67,7 +67,10 @@ def get_lang(item, lang='fi'):
     return item[lang] if item[lang] is not None else ''
 
 def parse_dylan_json(json_dict, day_of_week, lang='fi'):
-    menu = json_dict['data']['week']['days'][day_of_week+1]['lunches']
+    try:
+        menu = json_dict['data']['week']['days'][day_of_week+1]['lunches']
+    except Exception:
+        return E.DIV(E.P(E.B('Not available')))
     day_name = json_dict['data']['week']['days'][day_of_week+1]['dayName'][lang]
     return E.DIV(
         E.P(E.B(day_name)),
