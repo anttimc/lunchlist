@@ -40,7 +40,7 @@ def get_bax_menu(week_number, day_of_week=0):
     url = 'https://kanresta.fi/ravintolat/ravintola-bax/'
     page = requests.get(url)
     tree = html.fromstring(page.content)
-    menu = tree.xpath(f"//*[@id='week-{week_number}']//div[@class='weekday-block']")
+    menu = tree.xpath(f"//*[@id='week-{week_number:02d}']//div[@class='weekday-block']")
     try:
         element = menu[day_of_week]
     except Exception:
