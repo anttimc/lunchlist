@@ -56,8 +56,13 @@ def get_bax_menu(week_number, day_of_week=0):
 def get_akseli_menu(day_of_week=0):
     url = 'https://www.ninankeittio.fi/helsinki-ilmala-akseli/'
     page = requests.get(url)
+    print(f"DEBUG: Fetching Akseli: {url}, status: {page.status_code}")
     tree = html.fromstring(page.content)
-    menu = tree.xpath("//*[@id='lounaslista']/div/div/div[2]/div/div[2]")[0]
+    xpath_result = tree.xpath("//*[@id='lounaslista']/div/div/div[2]/div/div[2]")
+    if not xpath_result:
+        print(f"DEBUG: Akseli XPath failed. HTML length: {len(page.content)}")
+        raise RuntimeError('Menu not found')
+    menu = xpath_result[0]
     # The menu is a list of paragraphs and lists
     # The fist paragrah is the week, next ones day + lunchlist
     return E.DIV(*menu[1 + 2*day_of_week:1 + 2*(day_of_week+1)])
