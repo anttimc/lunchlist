@@ -37,20 +37,8 @@ def get_menu(url, day_of_week=0):
     return menu[0][day_of_week]
 
 def get_paattari_menu(day_of_week=0):
-    url = 'https://nordrest.fi/ravintola-paattari/'
-    page = requests.get(url)
-    tree = html.fromstring(page.content)
 
-    lines = [
-        text.strip() for text in tree.xpath('//text()')
-        if text and text.strip()
-    ]
-
-    menu_block = lines
-
-    day_names = ['MAANANTAI', 'TIISTAI', 'KESKIVIIKKO', 'TORSTAI', 'PERJANTAI']
-    current_day = day_names[min(max(day_of_week, 0), 4)]
-
+    # helper function to identify day headers in the menu text
     def is_day_header(line):
         upper = line.upper()
         parts = upper.split()
@@ -60,17 +48,25 @@ def get_paattari_menu(day_of_week=0):
             return False
         return any(char.isdigit() for char in parts[1])
 
+    # webpage data
+    url = 'https://nordrest.fi/ravintola-paattari/'
+    page = requests.get(url)
+    tree = html.fromstring(page.content)
+    lines = [
+        text.strip() for text in tree.xpath('//text()')
+        if text and text.strip()
+    ]
+    menu_block = lines
+    day_names = ['MAANANTAI', 'TIISTAI', 'KESKIVIIKKO', 'TORSTAI', 'PERJANTAI']
+    current_day = day_names[min(max(day_of_week, 0), 4)]
     end_tokens = {'HINNAT', 'AUKIOLOAJAT'}
-
     sections = {}
     for idx, line in enumerate(menu_block):
         if not is_day_header(line):
             continue
-
         day_key = next(day for day in day_names if line.upper() == day or line.upper().startswith(day + ' '))
         if day_key in sections:
             continue
-
         section_items = []
         for next_line in menu_block[idx + 1:]:
             upper_next = next_line.upper()
@@ -84,20 +80,20 @@ def get_paattari_menu(day_of_week=0):
             sections[day_key] = (line, section_items)
 
     if not sections:
-        return E.DIV(E.P(E.B('Not available')))
+        return E.DIV(
+            E.P(E.B(current_day)),
+            E.P(E.B('Not available'))
+        )
 
     selected = sections.get(current_day)
     if selected is None:
-        selected = next((sections[day] for day in day_names if day in sections), None)
-    if selected is None:
-        return E.DIV(E.P(E.B('Not available')))
-
+        return E.DIV(
+            E.P(E.B(current_day)),
+            E.P(E.B('Not available'))
+        )
     day_title, items = selected
 
-    return E.DIV(
-        E.P(E.B(day_title)),
-        E.UL(*[E.LI(item) for item in items])
-    )
+    return E.DIV(E.P(E.B(day_title)), E.UL(*[E.LI(item) for item in items]))
 
 
 def get_akseli_menu(day_of_week=0):
