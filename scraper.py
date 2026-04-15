@@ -9,7 +9,7 @@ def get_url(name):
 
 display_names = {
     'ravintola-akseli': 'Ravintola Akseli',
-    'bax': 'Båx',
+    'ravintola-paattari': 'Ravintola Päättäri',
     'dylan-luft': 'Dylan Luft'
 }
 
@@ -36,20 +36,67 @@ def get_menu(url, day_of_week=0):
     menu = tree.xpath("//*[@id='menu']")
     return menu[0][day_of_week]
 
-def get_bax_menu(week_number, day_of_week=0):
-    url = 'https://kanresta.fi/ravintolat/ravintola-bax/'
+def get_paattari_menu(day_of_week=0):
+    url = 'https://nordrest.fi/ravintola-paattari/'
     page = requests.get(url)
     tree = html.fromstring(page.content)
-    menu = tree.xpath(f"//*[@id='week-{week_number:02d}']//div[@class='weekday-block']")
-    try:
-        element = menu[day_of_week]
-    except Exception:
-        return E.DIV(E.P(E.B('Not available'))) 
-    for el in element[1:]:
-        el.tag = 'li'
+
+    lines = [
+        text.strip() for text in tree.xpath('//text()')
+        if text and text.strip()
+    ]
+
+    menu_block = lines
+
+    day_names = ['MAANANTAI', 'TIISTAI', 'KESKIVIIKKO', 'TORSTAI', 'PERJANTAI']
+    current_day = day_names[min(max(day_of_week, 0), 4)]
+
+    def is_day_header(line):
+        upper = line.upper()
+        parts = upper.split()
+        if len(parts) < 2:
+            return False
+        if parts[0] not in day_names:
+            return False
+        return any(char.isdigit() for char in parts[1])
+
+    end_tokens = {'HINNAT', 'AUKIOLOAJAT'}
+
+    sections = {}
+    for idx, line in enumerate(menu_block):
+        if not is_day_header(line):
+            continue
+
+        day_key = next(day for day in day_names if line.upper() == day or line.upper().startswith(day + ' '))
+        if day_key in sections:
+            continue
+
+        section_items = []
+        for next_line in menu_block[idx + 1:]:
+            upper_next = next_line.upper()
+            if is_day_header(next_line) or any(upper_next.startswith(token) for token in end_tokens):
+                break
+            if next_line == '\xa0':
+                continue
+            section_items.append(next_line)
+
+        if section_items:
+            sections[day_key] = (line, section_items)
+
+    if not sections:
+        return E.DIV(E.P(E.B('Not available')))
+
+    selected = sections.get(current_day)
+    if selected is None:
+        selected = next((sections[day] for day in day_names if day in sections), None)
+    if selected is None:
+        return E.DIV(E.P(E.B('Not available')))
+
+    day_title, items = selected
+
     return E.DIV(
-        E.P(E.B(element[0].text)),
-        E.UL(*element[1:])
+        E.P(E.B(day_title)),
+        E.UL(*[E.LI(item) for item in items])
     )
 
 
@@ -97,7 +144,7 @@ def get_menus(names, day_of_week, week_number):
     menus = {}
     for name in names:
         menus[name] = (
-            get_bax_menu(week_number, day_of_week) if name == 'bax' else
+            get_paattari_menu(day_of_week) if name == 'ravintola-paattari' else
             get_akseli_menu(day_of_week) if name == 'ravintola-akseli' else
             get_dylan_luft_menu(day_of_week) if name == 'dylan-luft' else
             get_menu(get_url(name), day_of_week=day_of_week)
@@ -108,7 +155,7 @@ def create_menu_page(menus, weekday_name=0):
     menu_page = E.HTML(
         E.HEAD(
             E.TITLE(f'Lunch: {weekday_name}'),
-            E.LINK(rel='stylesheet', href='bax.css', type='text/css', media='all'),
+            E.LINK(rel='stylesheet', href='layout.css', type='text/css', media='all'),
             E.META(name='viewport', content="width=device-width, initial-scale=1")
         ),
         E.BODY(*[
@@ -128,7 +175,7 @@ if __name__ == '__main__':
 
     menu_page = create_menu_page(
         get_menus(
-            ['ravintola-akseli', 'bax', 'dylan-luft'],
+            ['ravintola-akseli', 'ravintola-paattari', 'dylan-luft'],
             day_of_week=weekday,
             week_number=week_number
             ), 
