@@ -52,11 +52,10 @@ def get_paattari_menu(day_of_week=0):
     url = 'https://nordrest.fi/ravintola-paattari/'
     page = requests.get(url)
     tree = html.fromstring(page.content)
-    lines = [
-        text.strip() for text in tree.xpath('//text()')
-        if text and text.strip()
-    ]
-    menu_block = lines
+    lunch_heading = tree.xpath("//*[starts-with(text(), 'LOUNASLISTA')]")[0]
+    menu_div = lunch_heading.xpath("ancestor::div[1]")[0]
+    menu_block = [x.text_content() for x in menu_div]
+
     day_names = ['MAANANTAI', 'TIISTAI', 'KESKIVIIKKO', 'TORSTAI', 'PERJANTAI']
     current_day = day_names[min(max(day_of_week, 0), 4)]
     end_tokens = {'HINNAT', 'AUKIOLOAJAT'}
