@@ -29,8 +29,8 @@ dietary_mappings = {
 
 def get_menu(url, day_of_week=0):
     try:
-        page = requests.get(url)
-    except requests.exceptions.ConnectionError:
+        page = requests.get(url, timeout=15)
+    except requests.exceptions.RequestException:
         return E.DIV(E.P('lounaat.info unreachable'))
     tree = html.fromstring(page.content)
     menu = tree.xpath("//*[@id='menu']")
@@ -48,16 +48,19 @@ def get_paattari_menu(day_of_week=0):
             return False
         return any(char.isdigit() for char in parts[1])
 
+    day_names = ['MAANANTAI', 'TIISTAI', 'KESKIVIIKKO', 'TORSTAI', 'PERJANTAI']
+    current_day = day_names[min(max(day_of_week, 0), 4)]
+
     # webpage data
     url = 'https://nordrest.fi/ravintola-paattari/'
-    page = requests.get(url)
+    try:
+        page = requests.get(url, timeout=15)
+    except requests.exceptions.RequestException:
+        return E.DIV(E.P(E.B(current_day)), E.P('Päättäri unreachable'))
     tree = html.fromstring(page.content)
     lunch_heading = tree.xpath("//*[starts-with(text(), 'LOUNASLISTA')]")[0]
     menu_div = lunch_heading.xpath("ancestor::div[1]")[0]
     menu_block = [x.text_content() for x in menu_div]
-
-    day_names = ['MAANANTAI', 'TIISTAI', 'KESKIVIIKKO', 'TORSTAI', 'PERJANTAI']
-    current_day = day_names[min(max(day_of_week, 0), 4)]
     end_tokens = {'HINNAT', 'AUKIOLOAJAT'}
     sections = {}
     for idx, line in enumerate(menu_block):
@@ -97,16 +100,17 @@ def get_paattari_menu(day_of_week=0):
 
 def get_akseli_menu(day_of_week=0):
     url = 'https://www.ninankeittio.fi/helsinki-ilmala-akseli/'
-    page = requests.get(url)
-    print(f"DEBUG: Fetching Akseli: {url}, status: {page.status_code}")
+    try:
+        page = requests.get(url, timeout=15)
+    except requests.exceptions.RequestException:
+        return E.DIV(E.P('Akseli unreachable'))
     tree = html.fromstring(page.content)
     xpath_result = tree.xpath("//*[@id='lounaslista']/div/div/div[2]/div/div[2]")
     if not xpath_result:
-        print(f"DEBUG: Akseli XPath failed. HTML length: {len(page.content)}")
-        raise RuntimeError('Menu not found')
+        return E.DIV(E.P('Akseli menu not found'))
     menu = xpath_result[0]
     # The menu is a list of paragraphs and lists
-    # The fist paragrah is the week, next ones day + lunchlist
+    # The first paragraph is the week, next ones day + lunchlist
     return E.DIV(*menu[1 + 2*day_of_week:1 + 2*(day_of_week+1)])
 
 
@@ -129,7 +133,10 @@ def parse_dylan_json(json_dict, day_of_week, lang='fi'):
 
 def get_dylan_luft_menu(day_of_week=0):
     url = 'https://europe-west1-luncher-7cf76.cloudfunctions.net/api/v1/week/5843f3ec-6a2c-49ba-ba3e-b384f6c996f1/active?language=fi'
-    json_dict = requests.get(url).json()
+    try:
+        json_dict = requests.get(url, timeout=15).json()
+    except requests.exceptions.RequestException:
+        return E.DIV(E.P('Dylan Luft unreachable'))
     return E.DIV(
         parse_dylan_json(json_dict, day_of_week, 'fi'),
         parse_dylan_json(json_dict, day_of_week, 'en')
