@@ -52,15 +52,21 @@ def get_paattari_menu(day_of_week=0):
     current_day = day_names[min(max(day_of_week, 0), 4)]
 
     # webpage data
-    url = 'https://nordrest.fi/ravintola-paattari/'
+    url = 'https://nordrest.fi/restaurang/ravintola-paattari/'
     try:
         page = requests.get(url, timeout=15)
     except requests.exceptions.RequestException:
         return E.DIV(E.P(E.B(current_day)), E.P('Päättäri unreachable'))
     tree = html.fromstring(page.content)
-    lunch_heading = tree.xpath("//*[starts-with(text(), 'LOUNASLISTA')]")[0]
-    menu_div = lunch_heading.xpath("ancestor::div[1]")[0]
-    menu_block = [x.text_content() for x in menu_div]
+    lunch_headings = tree.xpath("//div[contains(@class,'elementor-widget-shortcode')]//strong[contains(text(), 'LOUNASLISTA')]")
+    if not lunch_headings:
+        return E.DIV(
+            E.P(E.B(current_day)),
+            E.P(E.B('Not available'))
+        )
+    widget_div = lunch_headings[0].xpath("ancestor::div[contains(@class,'elementor-widget-shortcode')]")[0]
+    menu_div = widget_div.xpath(".//div[contains(@class,'elementor-shortcode')]")[0]
+    menu_block = [x.text_content().strip() for x in menu_div]
     end_tokens = {'HINNAT', 'AUKIOLOAJAT'}
     sections = {}
     for idx, line in enumerate(menu_block):
