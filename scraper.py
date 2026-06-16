@@ -10,7 +10,8 @@ def get_url(name):
 display_names = {
     'ravintola-akseli': 'Ravintola Akseli',
     'ravintola-paattari': 'Ravintola Päättäri',
-    'dylan-luft': 'Dylan Luft'
+    'dylan-luft': 'Dylan Luft',
+    'ravintola-vesilinna': 'Ravintola Vesilinna',
 }
 
 
@@ -148,6 +149,54 @@ def get_dylan_luft_menu(day_of_week=0):
         parse_dylan_json(json_dict, day_of_week, 'en')
     )
 
+def get_vesilinna_menu(day_of_week=0):
+    import re
+    day_abbrevs = ['Ma', 'Ti', 'Ke', 'To', 'Pe']
+    current_day = day_abbrevs[min(max(day_of_week, 0), 4)]
+
+    url = 'https://www.ravintolavesilinna.fi/'
+    try:
+        page = requests.get(url, timeout=15)
+    except requests.exceptions.RequestException:
+        return E.DIV(E.P('Vesilinna unreachable'))
+
+    tree = html.fromstring(page.content)
+    messages = tree.xpath("//div[contains(@class,'fts-jal-fb-message')]")
+
+    today = datetime.date.today()
+    monday = today - datetime.timedelta(days=today.weekday())
+    target_prefix = monday.strftime('%-d.%-m.')
+
+    day_pattern = re.compile(r'^(Ma|Ti|Ke|To|Pe)\s+\d+\.\d+\.?', re.IGNORECASE)
+
+    for msg in messages:
+        text = msg.text_content().strip()
+        if target_prefix not in text:
+            continue
+
+        sections = {}
+        current_section = None
+        current_items = []
+        for line in (l.strip() for l in text.split('\n')):
+            m = day_pattern.match(line)
+            if m:
+                if current_section is not None:
+                    sections[current_section] = current_items
+                current_section = m.group(1).capitalize()
+                current_items = []
+            elif current_section is not None and line:
+                current_items.append(line)
+        if current_section is not None:
+            sections[current_section] = current_items
+
+        items = sections.get(current_day)
+        if items is None:
+            return E.DIV(E.P(E.B(current_day)), E.P(E.B('Not available')))
+        return E.DIV(E.P(E.B(current_day)), E.UL(*[E.LI(item) for item in items]))
+
+    return E.DIV(E.P(E.B(current_day)), E.P(E.B('Not available')))
+
+
 def get_menus(names, day_of_week, week_number):
     menus = {}
     for name in names:
@@ -155,6 +204,7 @@ def get_menus(names, day_of_week, week_number):
             get_paattari_menu(day_of_week) if name == 'ravintola-paattari' else
             get_akseli_menu(day_of_week) if name == 'ravintola-akseli' else
             get_dylan_luft_menu(day_of_week) if name == 'dylan-luft' else
+            get_vesilinna_menu(day_of_week) if name == 'ravintola-vesilinna' else
             get_menu(get_url(name), day_of_week=day_of_week)
         )
     return menus
@@ -183,7 +233,7 @@ if __name__ == '__main__':
 
     menu_page = create_menu_page(
         get_menus(
-            ['ravintola-akseli', 'ravintola-paattari', 'dylan-luft'],
+            ['ravintola-akseli', 'ravintola-paattari', 'dylan-luft', 'ravintola-vesilinna'],
             day_of_week=weekday,
             week_number=week_number
             ), 
