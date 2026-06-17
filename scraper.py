@@ -106,19 +106,37 @@ def get_paattari_menu(day_of_week=0):
 
 
 def get_akseli_menu(day_of_week=0):
+    day_names = ['Maanantai', 'Tiistai', 'Keskiviikko', 'Torstai', 'Perjantai']
+    current_day = day_names[min(max(day_of_week, 0), 4)]
+
     url = 'https://www.ninankeittio.fi/helsinki-ilmala-akseli/'
     try:
         page = requests.get(url, timeout=15)
     except requests.exceptions.RequestException:
         return E.DIV(E.P('Akseli unreachable'))
     tree = html.fromstring(page.content)
-    xpath_result = tree.xpath("//*[@id='lounaslista']/div/div/div[2]/div/div[2]")
-    if not xpath_result:
+
+    heading = tree.xpath("//*[@id='lounaslista']//h3[contains(text(),'Lounaslista')]")
+    if not heading:
         return E.DIV(E.P('Akseli menu not found'))
-    menu = xpath_result[0]
-    # The menu is a list of paragraphs and lists
-    # The first paragraph is the week, next ones day + lunchlist
-    return E.DIV(*menu[1 + 2*day_of_week:1 + 2*(day_of_week+1)])
+    col_wrapper = heading[0].xpath("ancestor::div[contains(@class,'fusion-column-wrapper')]")
+    if not col_wrapper:
+        return E.DIV(E.P('Akseli menu not found'))
+    text_divs = col_wrapper[0].xpath(".//div[contains(@class,'fusion-text')]")
+    if not text_divs:
+        return E.DIV(E.P('Akseli menu not found'))
+
+    children = list(text_divs[0])
+    for i, child in enumerate(children):
+        text = child.text_content().strip()
+        if text.upper().startswith(current_day.upper()):
+            if i + 1 < len(children) and children[i + 1].tag == 'ul':
+                day_header = E.P(E.B(text))
+                ul = children[i + 1]
+                return E.DIV(day_header, ul)
+            break
+
+    return E.DIV(E.P('Akseli menu not found'))
 
 
 def get_lang(item, lang='fi'):
