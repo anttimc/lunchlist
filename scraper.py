@@ -106,37 +106,50 @@ def get_paattari_menu(day_of_week=0):
 
 
 def get_akseli_menu(day_of_week=0):
+    import time
     day_names = ['Maanantai', 'Tiistai', 'Keskiviikko', 'Torstai', 'Perjantai']
     current_day = day_names[min(max(day_of_week, 0), 4)]
 
     url = 'https://www.ninankeittio.fi/helsinki-ilmala-akseli/'
-    try:
-        page = requests.get(url, timeout=15)
-    except requests.exceptions.RequestException:
-        return E.DIV(E.P('Akseli unreachable'))
-    tree = html.fromstring(page.content)
+    last_error = None
+    for attempt in range(3):
+        if attempt > 0:
+            time.sleep(5)
+        try:
+            page = requests.get(url, timeout=15)
+            page.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            last_error = f'Akseli fetch error (attempt {attempt+1}/3): {e}'
+            continue
 
-    heading = tree.xpath("//*[@id='lounaslista']//h3[contains(text(),'Lounaslista')]")
-    if not heading:
-        return E.DIV(E.P('Akseli menu not found'))
-    col_wrapper = heading[0].xpath("ancestor::div[contains(@class,'fusion-column-wrapper')]")
-    if not col_wrapper:
-        return E.DIV(E.P('Akseli menu not found'))
-    text_divs = col_wrapper[0].xpath(".//div[contains(@class,'fusion-text')]")
-    if not text_divs:
-        return E.DIV(E.P('Akseli menu not found'))
+        tree = html.fromstring(page.content)
+        heading = tree.xpath("//*[@id='lounaslista']//h3[contains(text(),'Lounaslista')]")
+        if not heading:
+            last_error = f'Akseli: #lounaslista h3 not found (HTTP {page.status_code}, {len(page.content)} bytes)'
+            continue
+        col_wrapper = heading[0].xpath("ancestor::div[contains(@class,'fusion-column-wrapper')]")
+        if not col_wrapper:
+            last_error = 'Akseli: fusion-column-wrapper not found'
+            continue
+        text_divs = col_wrapper[0].xpath(".//div[contains(@class,'fusion-text')]")
+        if not text_divs:
+            last_error = 'Akseli: fusion-text div not found'
+            continue
 
-    children = list(text_divs[0])
-    for i, child in enumerate(children):
-        text = child.text_content().strip()
-        if text.upper().startswith(current_day.upper()):
-            if i + 1 < len(children) and children[i + 1].tag == 'ul':
-                day_header = E.P(E.B(text))
-                ul = children[i + 1]
-                return E.DIV(day_header, ul)
-            break
+        children = list(text_divs[0])
+        day_texts = [c.text_content().strip() for c in children]
+        for i, child in enumerate(children):
+            text = child.text_content().strip()
+            if text.upper().startswith(current_day.upper()):
+                if i + 1 < len(children) and children[i + 1].tag == 'ul':
+                    return E.DIV(E.P(E.B(text)), children[i + 1])
+                last_error = f'Akseli: day header found but no ul follows (children: {day_texts})'
+                break
+        else:
+            last_error = f'Akseli: {current_day} not found in menu (found: {day_texts})'
+        break  # parse succeeded but day missing — no point retrying
 
-    return E.DIV(E.P('Akseli menu not found'))
+    return E.DIV(E.P(f'Akseli error: {last_error}'))
 
 
 def get_lang(item, lang='fi'):
