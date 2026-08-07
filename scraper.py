@@ -59,14 +59,23 @@ def get_paattari_menu(day_of_week=0):
     except requests.exceptions.RequestException:
         return E.DIV(E.P(E.B(current_day)), E.P('Päättäri unreachable'))
     tree = html.fromstring(page.content)
-    lunch_headings = tree.xpath("//div[contains(@class,'elementor-widget-shortcode')]//strong[contains(text(), 'LOUNASLISTA')]")
+    lunch_headings = tree.xpath(
+        "//h2[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖ', 'abcdefghijklmnopqrstuvwxyzäö'), 'lounaslista')]"
+    )
     if not lunch_headings:
         return E.DIV(
             E.P(E.B(current_day)),
             E.P(E.B('Not available'))
         )
-    widget_div = lunch_headings[0].xpath("ancestor::div[contains(@class,'elementor-widget-shortcode')]")[0]
-    menu_div = widget_div.xpath(".//div[contains(@class,'elementor-shortcode')]")[0]
+    container = lunch_headings[0].xpath(
+        "ancestor::div[contains(@class,'e-con') and .//div[contains(@class,'elementor-shortcode')]][1]"
+    )
+    if not container:
+        return E.DIV(
+            E.P(E.B(current_day)),
+            E.P(E.B('Not available'))
+        )
+    menu_div = container[0].xpath(".//div[contains(@class,'elementor-shortcode')]")[0]
     menu_block = [x.text_content().strip() for x in menu_div]
     end_tokens = {'HINNAT', 'AUKIOLOAJAT'}
     sections = {}
